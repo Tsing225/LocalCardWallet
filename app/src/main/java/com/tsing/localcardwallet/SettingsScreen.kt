@@ -157,6 +157,7 @@ fun SettingsScreen(
 @Composable
 private fun ChangePasswordDialog(onDismiss: () -> Unit) {
     val context = LocalContext.current
+    val mismatchMessage = stringResource(R.string.password_mismatch)
     var oldPassword by remember { mutableStateOf("") }
     var newPassword by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
@@ -207,7 +208,7 @@ private fun ChangePasswordDialog(onDismiss: () -> Unit) {
         confirmButton = {
             TextButton(onClick = {
                 if (newPassword != confirmPassword) {
-                    error = context.getString(R.string.password_mismatch)
+                    error = mismatchMessage
                 } else {
                     val result = AuthManager.changePassword(context, oldPassword, newPassword)
                     if (result == null) onDismiss() else error = result

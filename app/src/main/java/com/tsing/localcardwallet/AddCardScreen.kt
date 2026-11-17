@@ -241,9 +241,9 @@ fun AddCardScreen(
 
             Spacer(modifier = Modifier.height(12.dp))
             val errors = ArrayList<String>(outcome.errors)
-            if (digits.isNotEmpty() && !expiryValid) errors.add(context.getString(R.string.add_error_expiry))
-            if (!cvvValid) errors.add(context.getString(R.string.cvv_invalid))
-            if (currentCount >= cardLimit) errors.add(context.getString(R.string.add_error_limit, cardLimit))
+            if (digits.isNotEmpty() && !expiryValid) errors.add(stringResource(R.string.add_error_expiry))
+            if (!cvvValid) errors.add(stringResource(R.string.cvv_invalid))
+            if (currentCount >= cardLimit) errors.add(stringResource(R.string.add_error_limit, cardLimit))
 
             if (errors.isNotEmpty() && (digits.isNotEmpty() || bankName.isNotEmpty())) {
                 Card(

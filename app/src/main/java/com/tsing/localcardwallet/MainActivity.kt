@@ -2,14 +2,12 @@ package com.tsing.localcardwallet
 
 import android.content.Context
 import android.widget.Toast
-import android.net.Uri
 import android.nfc.NfcAdapter
 import android.nfc.tech.IsoDep
 import android.os.Bundle
 import android.os.SystemClock
 import android.util.Log
 import android.view.WindowManager
-import androidx.activity.ComponentActivity
 import androidx.fragment.app.FragmentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -28,9 +26,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.zIndex
 import androidx.compose.animation.AnimatedContent
@@ -410,6 +405,11 @@ fun WalletScreen(
 
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    // 回调里要用的文案先在组合时用 stringResource 取好：
+    // Compose 里不允许用 context.getString 读字符串资源（语言切换时不会重组）
+    val verifyTitle = stringResource(R.string.verify_title)
+    val verifySubtitle = stringResource(R.string.verify_subtitle)
+    val verifyFailed = stringResource(R.string.verify_failed)
 
     val photoLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia()
@@ -525,13 +525,13 @@ fun WalletScreen(
                         } else {
                             BiometricGate.authenticate(
                                 activity = hostActivity,
-                                title = context.getString(R.string.verify_title),
-                                subtitle = context.getString(R.string.verify_subtitle),
+                                title = verifyTitle,
+                                subtitle = verifySubtitle,
                                 onSuccess = { showFullPan = true },
                                 onFail = {
                                     Toast.makeText(
                                         context,
-                                        context.getString(R.string.verify_failed) + it,
+                                        verifyFailed + it,
                                         Toast.LENGTH_SHORT,
                                     ).show()
                                 },

@@ -82,6 +82,11 @@ fun CardDetailScreen(
     val context = LocalContext.current
     val activity = context as? FragmentActivity
     val scope = rememberCoroutineScope()
+    // 回调里要用的文案先在组合时用 stringResource 取好（见 MainActivity 同款注释）
+    val verifyTitle = stringResource(R.string.verify_title)
+    val verifySubtitle = stringResource(R.string.verify_subtitle)
+    val verifyFailed = stringResource(R.string.verify_failed)
+    val panCopiedMessage = stringResource(R.string.toast_pan_copied)
 
     var revealed by remember { mutableStateOf(false) }
     var cvvRevealed by remember { mutableStateOf(false) }
@@ -115,11 +120,11 @@ fun CardDetailScreen(
         }
         BiometricGate.authenticate(
             activity = activity,
-            title = context.getString(R.string.verify_title),
-            subtitle = context.getString(R.string.verify_subtitle),
+            title = verifyTitle,
+            subtitle = verifySubtitle,
             onSuccess = onGranted,
             onFail = {
-                Toast.makeText(context, context.getString(R.string.verify_failed) + it, Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, verifyFailed + it, Toast.LENGTH_SHORT).show()
             },
         )
     }
@@ -218,7 +223,7 @@ fun CardDetailScreen(
                                     copyPanToClipboard(context, scope, card.pan)
                                     Toast.makeText(
                                         context,
-                                        context.getString(R.string.toast_pan_copied),
+                                        panCopiedMessage,
                                         Toast.LENGTH_SHORT
                                     ).show()
                                 }) {
@@ -464,7 +469,7 @@ private fun EditCardInfoDialog(
     onDismiss: () -> Unit,
     onSave: (String?, String?, String?) -> Unit,
 ) {
-    val context = LocalContext.current
+    val cvvInvalidMessage = stringResource(R.string.cvv_invalid)
     var holder by remember { mutableStateOf(card.holderName ?: "") }
     var cvv by remember { mutableStateOf(card.cvv ?: "") }
     var kind by remember { mutableStateOf(card.cardKind ?: "") }
@@ -532,7 +537,7 @@ private fun EditCardInfoDialog(
         confirmButton = {
             TextButton(onClick = {
                 if (cvv.isNotEmpty() && cvv.length !in 3..4) {
-                    error = context.getString(R.string.cvv_invalid)
+                    error = cvvInvalidMessage
                 } else {
                     onSave(
                         holder.trim().ifBlank { null },

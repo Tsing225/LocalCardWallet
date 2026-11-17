@@ -59,6 +59,11 @@ fun LockScreen(onResetData: () -> Unit) {
     }
 
     val biometricReady = remember { BiometricGate.isAvailable(context) }
+    // 回调里要用的文案先在组合时用 stringResource 取好（见 MainActivity 同款注释）
+    val wrongPasswordMessage = stringResource(R.string.lock_error_wrong)
+    val mismatchMessage = stringResource(R.string.lock_error_mismatch)
+    val biometricTitle = stringResource(R.string.biometric_unlock_title)
+    val biometricSubtitle = stringResource(R.string.biometric_unlock_subtitle)
 
     Box(
         modifier = Modifier
@@ -156,12 +161,12 @@ fun LockScreen(onResetData: () -> Unit) {
                         if (AuthManager.verify(context, password)) {
                             // unlocked 状态变化会自动切换到主界面
                         } else {
-                            error = context.getString(R.string.lock_error_wrong)
+                            error = wrongPasswordMessage
                             password = ""
                         }
                     } else {
                         if (password != confirm) {
-                            error = context.getString(R.string.lock_error_mismatch)
+                            error = mismatchMessage
                         } else {
                             error = AuthManager.createAccount(context, password)
                         }
@@ -181,8 +186,8 @@ fun LockScreen(onResetData: () -> Unit) {
                 TextButton(onClick = {
                     BiometricGate.authenticate(
                         activity = activity,
-                        title = context.getString(R.string.biometric_unlock_title),
-                        subtitle = context.getString(R.string.biometric_unlock_subtitle),
+                        title = biometricTitle,
+                        subtitle = biometricSubtitle,
                         onSuccess = { AuthManager.unlockWithBiometric() },
                         onFail = { error = it },
                     )

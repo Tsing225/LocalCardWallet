@@ -18,3 +18,9 @@ build/
 .tmp/
 .kotlin/
 .idea/
+
+# 签名文件：绝对不能进仓库
+*.jks
+*.keystore
+*.b64
+.keystore-credentials.txt

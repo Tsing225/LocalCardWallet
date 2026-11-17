@@ -1,0 +1,29 @@
+THIRD-PARTY NOTICES
+===================
+
+1) banks.json —— 银行名称、品牌色、BIN 前缀
+   Source A: ramoona/banks-db
+     Repository: https://github.com/ramoona/banks-db
+     Author:     Linda Rian <lindarian12@gmail.com>
+     License:    CC-BY-4.0 (declared in package.json)
+     Note:       Upstream archived (read-only) in June 2026. Only factual data
+                 (bank name, brand color, BIN prefixes) is redistributed.
+
+   Source B: hexindai/bcbc —— China UnionPay BIN data
+     Repository: https://github.com/hexindai/bcbc
+     License:    MIT
+     Used part:  data/bin.csv (BIN -> bank code), data/name.csv (bank names)
+     Changes:    merged into the same flat prefix index; 3-4 digit prefixes
+                 dropped to avoid over-broad matching.
+
+   派生说明 / Derivative notes:
+     - Merged both sources into one flat index: prefix -> bank code
+     - China prefixes prefer bcbc (1941 entries); other countries come from banks-db
+     - Only display name, country, brand color and BIN prefixes are kept
+     - Chinese-localized names are preferred where available
+
+Card face artwork
+  This application does NOT bundle any bank card face images, brand logos,
+  or artwork owned by card issuers. All card faces are drawn procedurally
+  in code (Compose Canvas) from a brand color plus a geometric template,
+  or supplied by the user from their own photo library.

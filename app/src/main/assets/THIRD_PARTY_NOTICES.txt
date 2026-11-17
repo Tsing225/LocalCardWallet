@@ -1,29 +1,75 @@
 THIRD-PARTY NOTICES
 ===================
+LocalCardWallet 本地卡包
 
-1) banks.json —— 银行名称、品牌色、BIN 前缀
-   Source A: ramoona/banks-db
-     Repository: https://github.com/ramoona/banks-db
-     Author:     Linda Rian <lindarian12@gmail.com>
-     License:    CC-BY-4.0 (declared in package.json)
-     Note:       Upstream archived (read-only) in June 2026. Only factual data
-                 (bank name, brand color, BIN prefixes) is redistributed.
+本应用使用了以下开源项目与公开数据。按各自许可证要求保留署名。
 
-   Source B: hexindai/bcbc —— China UnionPay BIN data
-     Repository: https://github.com/hexindai/bcbc
-     License:    MIT
-     Used part:  data/bin.csv (BIN -> bank code), data/name.csv (bank names)
-     Changes:    merged into the same flat prefix index; 3-4 digit prefixes
-                 dropped to avoid over-broad matching.
+--------------------------------------------------------------------------
+1. 数据来源 / DATA SOURCES
+--------------------------------------------------------------------------
 
-   派生说明 / Derivative notes:
-     - Merged both sources into one flat index: prefix -> bank code
-     - China prefixes prefer bcbc (1941 entries); other countries come from banks-db
-     - Only display name, country, brand color and BIN prefixes are kept
-     - Chinese-localized names are preferred where available
+1.1 ramoona/banks-db
+    Repository : https://github.com/ramoona/banks-db
+    Author     : Linda Rian <lindarian12@gmail.com>
+    License    : CC-BY-4.0 (declare in package.json)
+    Used for   : 银行名称、品牌主色、BIN 前缀（77 个国家）
+    Note       : 上游仓库已于 2026-06 归档（只读）。本项目仅再分发事实性数据
+                 （银行名、色值、BIN 前缀），未包含其源代码。
 
-Card face artwork
-  This application does NOT bundle any bank card face images, brand logos,
-  or artwork owned by card issuers. All card faces are drawn procedurally
-  in code (Compose Canvas) from a brand color plus a geometric template,
-  or supplied by the user from their own photo library.
+1.2 hexindai/bcbc
+    Repository : https://github.com/hexindai/bcbc
+    Copyright  : Copyright (c) 2018-2020 Runrioter
+    License    : MIT
+    Used for   : 中国银联 BIN 前缀、银行中文名、借记/贷记类型
+    Note       : 使用 data/bin.csv 与 data/name.csv；已合并为统一前缀索引。
+
+1.3 公开银行卡 BIN 资料（整理）
+    Used for   : 中国主要发卡行（工行/中行/建行/农行/交行/招行/中信/光大/
+                 兴业/华夏/平安/广发/浙商/浦发/邮储）的 BIN 与卡类型补充
+    Note       : BIN/IIN 为事实性数据，不构成著作权客体。
+
+本项目未使用、未再分发任何银行官方卡面图、银行 logo 图形或从 Apple Pay /
+Google Pay / 云闪付 等渠道提取的卡面素材。所有卡面均由代码程序化生成，
+或由用户本人从相册提供。
+
+--------------------------------------------------------------------------
+2. 开源组件 / OPEN SOURCE LIBRARIES
+--------------------------------------------------------------------------
+
+2.1 EMV-NFC-Paycard-Enrollment
+    Repository : https://github.com/devnied/EMV-NFC-Paycard-Enrollment
+    Author     : devnied
+    License    : Apache License 2.0
+    Used for   : NFC 读取 EMV 银行卡芯片数据（卡号、有效期、卡组织）
+
+2.2 SQLCipher for Android (Community Edition)
+    Vendor     : Zetetic LLC
+    License    : BSD-style (https://www.zetetic.net/sqlcipher/license/)
+    Used for   : 本地数据库加密
+    Note       : 不得以 SQLCipher 商标暗示 Zetetic 对本产品背书。
+
+2.3 AndroidX (Jetpack)
+    Vendor     : The Android Open Source Project / Google
+    License    : Apache License 2.0
+    Components : Compose (UI / Material3 / Graphics), Room, Lifecycle,
+                 Activity, Biometric, Fragment, Core-KTX, SQLite-KTX,
+                 Material Icons
+
+2.4 Kotlin & Kotlin Coroutines
+    Vendor     : JetBrains
+    License    : Apache License 2.0
+
+--------------------------------------------------------------------------
+3. 设计参考 / DESIGN REFERENCES
+--------------------------------------------------------------------------
+
+- Material Design 3 设计语言（配色、组件规范）
+- Apple Wallet 的卡片堆叠与预览交互范式（仅交互思路，未使用其任何素材或代码）
+
+--------------------------------------------------------------------------
+4. 隐私说明 / PRIVACY
+--------------------------------------------------------------------------
+
+- 所有卡片数据、账号信息、卡面照片仅保存在本机，无任何网络上传。
+- 数据库使用 SQLCipher 加密；账号密码以 PBKDF2 加盐哈希形式保存。
+- 查看完整卡号与 CVV 需通过生物识别（可在设置中开关）。

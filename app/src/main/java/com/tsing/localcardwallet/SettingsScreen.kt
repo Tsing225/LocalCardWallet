@@ -48,6 +48,7 @@ fun SettingsScreen(
 ) {
     val context = LocalContext.current
     var showChangePassword by remember { mutableStateOf(false) }
+    var showLicenses by remember { mutableStateOf(false) }
     val versionName = remember {
         runCatching {
             context.packageManager.getPackageInfo(context.packageName, 0).versionName
@@ -140,6 +141,16 @@ fun SettingsScreen(
             SectionTitle(stringResource(R.string.settings_about))
             InfoRow(stringResource(R.string.settings_version), versionName)
             InfoRow(stringResource(R.string.settings_privacy), stringResource(R.string.settings_privacy_desc))
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { showLicenses = true }
+                    .padding(vertical = 6.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Text(text = stringResource(R.string.settings_licenses), fontSize = 14.sp)
+                Text(text = "›", fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
 
             Spacer(modifier = Modifier.height(24.dp))
             TextButton(onClick = onClearAll) {
@@ -152,6 +163,32 @@ fun SettingsScreen(
     if (showChangePassword) {
         ChangePasswordDialog(onDismiss = { showChangePassword = false })
     }
+    if (showLicenses) {
+        LicensesDialog(onDismiss = { showLicenses = false })
+    }
+}
+
+@Composable
+private fun LicensesDialog(onDismiss: () -> Unit) {
+    val context = LocalContext.current
+    val loadFailed = stringResource(R.string.licenses_load_failed)
+    val text = remember {
+        runCatching {
+            context.assets.open("THIRD_PARTY_NOTICES.txt").bufferedReader().use { it.readText() }
+        }.getOrDefault(loadFailed)
+    }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.settings_licenses)) },
+        text = {
+            Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                Text(text = text, fontSize = 12.sp)
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_close)) }
+        },
+    )
 }
 
 @Composable

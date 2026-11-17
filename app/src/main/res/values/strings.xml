@@ -129,6 +129,9 @@
     <string name="settings_version">版本</string>
     <string name="settings_privacy">隐私</string>
     <string name="settings_privacy_desc">所有数据仅保存在本机，无网络请求</string>
+    <string name="settings_licenses">开源许可</string>
+    <string name="licenses_load_failed">许可声明加载失败</string>
+    <string name="action_close">关闭</string>
     <string name="settings_clear_all">清空所有卡片</string>
     <string name="password_change_title">修改密码</string>
     <string name="password_old">原密码</string>

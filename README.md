@@ -66,13 +66,25 @@ app/src/main/assets/banks.json  BIN 数据库（见 THIRD_PARTY_NOTICES.txt）
 
 ## BIN 数据来源
 
-`assets/banks.json` 派生自两个开源数据（仅保留银行名、国家、品牌色与 BIN 前缀等事实数据），
+`assets/banks.json` 派生自以下数据（仅保留银行名、国家、品牌色与 BIN 前缀等事实数据），
 完整声明见 `app/src/main/assets/THIRD_PARTY_NOTICES.txt`：
 
 - ramoona/banks-db（CC-BY-4.0）：全球银行数据
 - hexindai/bcbc（MIT）：中国银联 BIN 数据，中国号段优先采用
+- 公开银行卡 BIN 资料整理：15 家主要发卡行的 BIN 与卡类型补充（BIN 为事实性数据）
 
 应用不内置任何银行 logo 或卡面图片：卡组织标识与卡面均由代码绘制，照片封面由用户自选。
+
+## 致谢
+
+- 数据：ramoona/banks-db（CC-BY-4.0，© Linda Rian）、hexindai/bcbc（MIT，© Runrioter）
+- 开源组件：EMV-NFC-Paycard-Enrollment（Apache-2.0）、SQLCipher（BSD-style）、
+  AndroidX / Jetpack（Apache-2.0）、Kotlin 与协程（Apache-2.0）
+- 设计参考：Material Design 3；卡片堆叠交互范式参考 Apple Wallet
+  （仅思路，未使用其素材或代码）
+
+完整第三方声明见 `app/src/main/assets/THIRD_PARTY_NOTICES.txt`，
+应用内「设置 → 开源许可」可直接查看。
 
 ## 版本
 

@@ -129,6 +129,9 @@
     <string name="settings_version">Version</string>
     <string name="settings_privacy">Privacy</string>
     <string name="settings_privacy_desc">All data stays on this device, no network requests</string>
+    <string name="settings_licenses">Open-source licenses</string>
+    <string name="licenses_load_failed">Failed to load the license notices</string>
+    <string name="action_close">Close</string>
     <string name="settings_clear_all">Clear all cards</string>
     <string name="password_change_title">Change password</string>
     <string name="password_old">Current password</string>

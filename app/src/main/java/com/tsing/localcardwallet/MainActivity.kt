@@ -560,13 +560,18 @@ fun WalletScreen(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(totalHeight)
+                    .weight(1f)
                     .verticalScroll(scrollState)
                     .clickable(
                         interactionSource = blankInteraction,
                         indication = null,
                     ) { previewCardId = null },
             ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(totalHeight)
+                ) {
                 cards.forEachIndexed { index, card ->
                     val isPreview = previewCardId == card.id
                     val lift by animateDpAsState(
@@ -598,18 +603,9 @@ fun WalletScreen(
                         )
                     }
                 }
-            }
+                }
 
-            // 卡片下方的空白：点这里收起预览
-            Spacer(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f)
-                    .clickable(
-                        interactionSource = blankInteraction,
-                        indication = null,
-                    ) { previewCardId = null },
-            )
+            }
         }
     }
 

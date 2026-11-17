@@ -1,4 +1,4 @@
-{"version":4,"source":"banks-db 0.23.0 (CC-BY-4.0) + hexindai/bcbc (MIT) + 公开 BIN 资料整理; with card kind","generated":"2026-11-17",
+{"version":5,"source":"banks-db 0.23.0 (CC-BY-4.0) + hexindai/bcbc (MIT) + 公开 BIN 资料整理; with card kind","generated":"2026-11-17",
   "banks": {
   "abc": {
     "n": "中国农业银行",
@@ -2057,6 +2057,8 @@
     "535910": "CC",
     "535918": "CC",
     "537832": "CC",
+    "559899": "CC",
+    "534293": "DC",
     "539867": "CC",
     "539868": "CC",
     "541709": "CC",
@@ -10374,7 +10376,9 @@
     "537465": "bunq",
     "537675": "ctbcbank",
     "537805": "ctbcbank",
-    "537832": "boco",
+    "537832": "cmb",
+    "559899": "cmb",
+    "534293": "cmb",
     "539123": "revolut",
     "539228": "esunbank",
     "539231": "esunbank",

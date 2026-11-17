@@ -14,8 +14,8 @@ android {
         applicationId = "com.tsing.localcardwallet"
         minSdk = 24
         targetSdk = 37
-        versionCode = 20
-        versionName = "1.8.3"
+        versionCode = 21
+        versionName = "1.8.4"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

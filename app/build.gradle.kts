@@ -14,8 +14,8 @@ android {
         applicationId = "com.tsing.localcardwallet"
         minSdk = 24
         targetSdk = 37
-        versionCode = 19
-        versionName = "1.8.2"
+        versionCode = 20
+        versionName = "1.8.3"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -40,10 +40,9 @@ android {
             if (rootProject.file(path).exists()) {
                 signingConfig = signingConfigs.getByName("release")
             }
-            optimization {
-                enable = true
-                packageScope = setOf("androidx.**", "kotlin.**", "kotlinx.**")
-            }
+            // R8 optimization disabled: it broke startup with
+            // IllegalAccessError in androidx.startup (2026-11-17).
+            // Do not re-enable without keep rules + on-device test.
         }
     }
     compileOptions {

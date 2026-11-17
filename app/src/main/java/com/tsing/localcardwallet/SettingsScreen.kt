@@ -1,5 +1,7 @@
 package com.tsing.localcardwallet
 
+import androidx.annotation.DrawableRes
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -9,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -30,7 +33,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -141,6 +146,30 @@ fun SettingsScreen(
             SectionTitle(stringResource(R.string.settings_about))
             InfoRow(stringResource(R.string.settings_version), versionName)
             InfoRow(stringResource(R.string.settings_privacy), stringResource(R.string.settings_privacy_desc))
+            InfoRow(stringResource(R.string.about_feedback_label), stringResource(R.string.about_feedback_value))
+            InfoRow(stringResource(R.string.about_qq_label), stringResource(R.string.about_qq_value))
+
+            Spacer(modifier = Modifier.height(12.dp))
+            Text(
+                text = stringResource(R.string.about_support_title),
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Bold,
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = stringResource(R.string.about_support_text),
+                fontSize = 13.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally),
+            ) {
+                DonateQr(R.drawable.donate_wechat, stringResource(R.string.about_qr_wechat))
+                DonateQr(R.drawable.donate_alipay, stringResource(R.string.about_qr_alipay))
+            }
+            Spacer(modifier = Modifier.height(12.dp))
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -317,6 +346,20 @@ private fun SwitchRow(title: String, subtitle: String, checked: Boolean, onChang
             Text(text = subtitle, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         Switch(checked = checked, onCheckedChange = onChange)
+    }
+}
+
+@Composable
+private fun DonateQr(@DrawableRes resId: Int, label: String) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Image(
+            painter = painterResource(resId),
+            contentDescription = label,
+            modifier = Modifier.width(140.dp),
+            contentScale = ContentScale.FillWidth,
+        )
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(text = label, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 

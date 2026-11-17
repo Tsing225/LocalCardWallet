@@ -86,6 +86,14 @@ app/src/main/assets/banks.json  BIN 数据库（见 THIRD_PARTY_NOTICES.txt）
 完整第三方声明见 `app/src/main/assets/THIRD_PARTY_NOTICES.txt`，
 应用内「设置 → 开源许可」可直接查看。
 
+## 反馈与支持
+
+- 问题反馈：2012990260@qq.com
+- QQ 交流群：1106465059
+- 微信 / 支付宝赞赏：见 App 内「关于与支持」页面（纯赞助，不解锁任何功能）
+
+这个项目完全离线运行，没有服务器成本。你的支持会用来覆盖持续的开发与测试时间。
+
 ## 版本
 
 当前版本 1.8.2。改动记录以 git 提交历史为准。

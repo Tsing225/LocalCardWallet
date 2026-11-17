@@ -125,7 +125,15 @@
     <string name="settings_bin_lib_desc">341 家银行 · 9480 个号段 · 离线</string>
     <string name="settings_database">数据库</string>
     <string name="settings_database_desc">SQLCipher 加密，密钥由系统 Keystore 保护</string>
-    <string name="settings_about">关于</string>
+    <string name="settings_about">关于与支持</string>
+    <string name="about_feedback_label">反馈邮箱</string>
+    <string name="about_feedback_value">2012990260@qq.com</string>
+    <string name="about_qq_label">交流群（QQ）</string>
+    <string name="about_qq_value">1106465059</string>
+    <string name="about_support_title">支持开发者</string>
+    <string name="about_support_text">这个 App 是我一个人写的。它完全离线运行，没有服务器，也不收集你的任何数据。如果它帮你省了点事，欢迎扫码请我喝杯咖啡。不影响任何功能，只是心意。</string>
+    <string name="about_qr_wechat">微信</string>
+    <string name="about_qr_alipay">支付宝</string>
     <string name="settings_version">版本</string>
     <string name="settings_privacy">隐私</string>
     <string name="settings_privacy_desc">所有数据仅保存在本机，无网络请求</string>

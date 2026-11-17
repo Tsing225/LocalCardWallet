@@ -6,7 +6,9 @@ import android.net.Uri
 import android.nfc.NfcAdapter
 import android.nfc.tech.IsoDep
 import android.os.Bundle
+import android.os.SystemClock
 import android.util.Log
+import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.fragment.app.FragmentActivity
 import androidx.activity.compose.BackHandler
@@ -43,6 +45,8 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.Saver
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
@@ -67,15 +71,23 @@ class MainActivity : FragmentActivity() {
     private var nfcAdapter: NfcAdapter? = null
     private lateinit var db: AppDatabase
 
+    /** 待用户确认的 NFC 卡片；读卡后先弹窗确认，不再静默入库 */
+    private var pendingNfcCard by mutableStateOf<CardEntity?>(null)
+
+    /** 切到后台的时间戳（elapsedRealtime）；超过宽限期回前台时自动上锁 */
+    private var backgroundedAtMs: Long = 0L
+
     override fun attachBaseContext(newBase: Context) {
         super.attachBaseContext(LocaleHelper.wrap(newBase))
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // 防截屏 / 防多任务缩略图：卡面包里的卡面与卡号不进系统截图
+        window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
         BankBinRepository.init(this)
         AppSettings.init(this)
-        // 先同步加载 BIN 表（约 260KB），避免首帧渲染时在主线程解析造成卡顿
+        // 触发 BIN 表后台加载（绝不在主线程解析约 300KB 的 JSON）
         runCatching { BankBinRepository.preload() }
         nfcAdapter = NfcAdapter.getDefaultAdapter(this)
         db = AppDatabase.getDatabase(this)
@@ -104,8 +116,16 @@ class MainActivity : FragmentActivity() {
         }
 
         setContent {
-            var screen by remember { mutableStateOf<Screen>(Screen.Wallet) }
+            var screen by rememberSaveable(stateSaver = ScreenSaver) { mutableStateOf<Screen>(Screen.Wallet) }
             val savedCards by db.cardDao().getAllCards().collectAsState(initial = emptyList())
+
+            // 上锁后回到钱包首页并丢弃待确认的 NFC 卡片，避免解锁后直接停在详情页
+            LaunchedEffect(AuthManager.unlocked) {
+                if (!AuthManager.unlocked) {
+                    screen = Screen.Wallet
+                    pendingNfcCard = null
+                }
+            }
 
             BackHandler(enabled = screen != Screen.Wallet) { screen = Screen.Wallet }
 
@@ -238,6 +258,51 @@ class MainActivity : FragmentActivity() {
                     }
                     }
                     }
+
+                    // NFC 读卡确认：只在解锁状态下弹出
+                    if (AuthManager.unlocked) {
+                        pendingNfcCard?.let { nfcCard ->
+                            AlertDialog(
+                                onDismissRequest = { pendingNfcCard = null },
+                                title = { Text(stringResource(R.string.nfc_dialog_title)) },
+                                text = {
+                                    Text(
+                                        stringResource(
+                                            R.string.nfc_dialog_message,
+                                            nfcCard.pan.takeLast(4),
+                                            nfcCard.bankName
+                                                ?: stringResource(R.string.value_not_recognized),
+                                            nfcCard.expiry,
+                                        )
+                                    )
+                                },
+                                confirmButton = {
+                                    TextButton(onClick = {
+                                        pendingNfcCard = null
+                                        lifecycleScope.launch(Dispatchers.IO) {
+                                            val msg = when {
+                                                db.cardDao().countCards() >= CARD_LIMIT ->
+                                                    this@MainActivity.getString(R.string.nfc_limit, CARD_LIMIT)
+                                                db.cardDao().insertCard(nfcCard) < 0 ->
+                                                    this@MainActivity.getString(R.string.nfc_exists)
+                                                else -> this@MainActivity.getString(R.string.nfc_added)
+                                            }
+                                            withContext(Dispatchers.Main) {
+                                                Toast.makeText(this@MainActivity, msg, Toast.LENGTH_SHORT).show()
+                                            }
+                                        }
+                                    }) {
+                                        Text(stringResource(R.string.action_add))
+                                    }
+                                },
+                                dismissButton = {
+                                    TextButton(onClick = { pendingNfcCard = null }) {
+                                        Text(stringResource(R.string.action_cancel))
+                                    }
+                                },
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -246,57 +311,56 @@ class MainActivity : FragmentActivity() {
     override fun onResume() {
         super.onResume()
         nfcAdapter?.enableReaderMode(this, { tag ->
+            // 未解锁时不读卡：锁屏界面贴卡不应产生任何写入
+            if (!AuthManager.unlocked) return@enableReaderMode
+            var isoDep: IsoDep? = null
             try {
-                val isoDep = IsoDep.get(tag)
-                if (isoDep != null) {
-                    isoDep.connect()
-                    isoDep.timeout = 5000
+                isoDep = IsoDep.get(tag) ?: return@enableReaderMode
+                isoDep.connect()
+                isoDep.timeout = 5000
 
-                    val provider = IsoDepProvider(isoDep)
-                    val config = EmvTemplate.Config()
-                        .setContactLess(true)
-                        .setReadAllAids(true)
-                        .setReadTransactions(false)
-                        .setRemoveDefaultParsers(false)
-                        .setReadAt(true)
+                val provider = IsoDepProvider(isoDep)
+                val config = EmvTemplate.Config()
+                    .setContactLess(true)
+                    .setReadAllAids(true)
+                    .setReadTransactions(false)
+                    .setRemoveDefaultParsers(false)
+                    .setReadAt(true)
 
-                    val parser = EmvTemplate.Builder()
-                        .setProvider(provider)
-                        .setConfig(config)
-                        .build()
+                val parser = EmvTemplate.Builder()
+                    .setProvider(provider)
+                    .setConfig(config)
+                    .build()
 
-                    val card = parser.readEmvCard()
+                val card = parser.readEmvCard()
 
-                    val dateFormatter = SimpleDateFormat("MM/yy", Locale.getDefault())
-                    val formattedExpiry = card.expireDate?.let { dateFormatter.format(it) } ?: "未知"
+                val dateFormatter = SimpleDateFormat("MM/yy", Locale.getDefault())
+                val formattedExpiry = card.expireDate?.let { dateFormatter.format(it) }
+                    ?: getString(R.string.value_unknown)
 
-                    val pan = card.cardNumber.orEmpty()
-                    val bank = BankBinRepository.lookup(pan)
-                    // ★ 统一转为大写，方便后面匹配颜色和Logo
-                    val newCard = CardEntity(
-                        pan = pan,
-                        expiry = formattedExpiry,
-                        type = card.type?.name?.replace("_", " ")?.uppercase() ?: "UNKNOWN",
-                        bankCode = bank?.code,
-                        bankName = bank?.name,
-                        cardKind = BankBinRepository.lookupKind(pan),
-                        source = CardEntity.SOURCE_NFC,
-                    )
+                val pan = card.cardNumber.orEmpty()
+                val bank = BankBinRepository.lookup(pan)
+                // ★ 统一转为大写，方便后面匹配颜色和Logo
+                val newCard = CardEntity(
+                    pan = pan,
+                    expiry = formattedExpiry,
+                    type = card.type?.name?.replace("_", " ")?.uppercase() ?: "UNKNOWN",
+                    bankCode = bank?.code,
+                    bankName = bank?.name,
+                    cardKind = BankBinRepository.lookupKind(pan),
+                    source = CardEntity.SOURCE_NFC,
+                )
 
-                    if (newCard.pan.isEmpty()) {
-                        Log.w("NFC_READ_ERROR", "卡片未返回卡号，已跳过保存")
-                    } else {
-                        lifecycleScope.launch(Dispatchers.IO) {
-                            if (db.cardDao().countCards() < CARD_LIMIT) {
-                                db.cardDao().insertCard(newCard) // DAO 里设置了 IGNORE，不会重复插入
-                            }
-                        }
-                    }
-
-                    isoDep.close()
+                if (newCard.pan.isEmpty()) {
+                    Log.w("NFC_READ_ERROR", "卡片未返回卡号，已跳过保存")
+                } else {
+                    // 先弹窗请用户确认，不再静默入库
+                    pendingNfcCard = newCard
                 }
             } catch (e: Exception) {
                 Log.e("NFC_READ_ERROR", "读取失败: " + e.message)
+            } finally {
+                runCatching { isoDep?.close() }
             }
         }, NfcAdapter.FLAG_READER_NFC_A or NfcAdapter.FLAG_READER_NFC_B, null)
     }
@@ -304,6 +368,24 @@ class MainActivity : FragmentActivity() {
     override fun onPause() {
         super.onPause()
         nfcAdapter?.disableReaderMode(this)
+    }
+
+    override fun onStop() {
+        super.onStop()
+        if (AuthManager.unlocked) {
+            backgroundedAtMs = SystemClock.elapsedRealtime()
+        }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        // 回到前台时，若离开超过宽限期则自动上锁（选照片等短暂离开不受影响）
+        if (AuthManager.unlocked && backgroundedAtMs > 0L &&
+            SystemClock.elapsedRealtime() - backgroundedAtMs > LOCK_GRACE_MS
+        ) {
+            AuthManager.lock()
+        }
+        backgroundedAtMs = 0L
     }
 }
 
@@ -443,11 +525,15 @@ fun WalletScreen(
                         } else {
                             BiometricGate.authenticate(
                                 activity = hostActivity,
-                                title = "验证身份",
-                                subtitle = "验证后显示完整卡号",
+                                title = context.getString(R.string.verify_title),
+                                subtitle = context.getString(R.string.verify_subtitle),
                                 onSuccess = { showFullPan = true },
                                 onFail = {
-                                    Toast.makeText(context, "验证未通过：" + it, Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(
+                                        context,
+                                        context.getString(R.string.verify_failed) + it,
+                                        Toast.LENGTH_SHORT,
+                                    ).show()
                                 },
                             )
                         }
@@ -635,12 +721,38 @@ private fun SheetActionRow(text: String, color: Color, onClick: () -> Unit) {
 /** 单机卡包最多保存 100 张卡 */
 private const val CARD_LIMIT = 100
 
+/** 切后台后超过该时长未回前台，自动上锁 */
+private const val LOCK_GRACE_MS = 60_000L
+
 sealed class Screen {
     object Wallet : Screen()
     object Settings : Screen()
     object AddCard : Screen()
     data class Detail(val cardId: Long) : Screen()
 }
+
+/** 导航状态的保存器：只存页面名和卡片 id（不含卡号），旋转屏幕后不丢页面 */
+private val ScreenSaver: Saver<Screen, String> = Saver(
+    save = { screen ->
+        when (screen) {
+            Screen.Wallet -> "wallet"
+            Screen.Settings -> "settings"
+            Screen.AddCard -> "add"
+            is Screen.Detail -> "detail:" + screen.cardId
+        }
+    },
+    restore = { saved ->
+        when {
+            saved == "wallet" -> Screen.Wallet
+            saved == "settings" -> Screen.Settings
+            saved == "add" -> Screen.AddCard
+            saved.startsWith("detail:") ->
+                saved.removePrefix("detail:").toLongOrNull()?.let { Screen.Detail(it) }
+                    ?: Screen.Wallet
+            else -> Screen.Wallet
+        }
+    },
+)
 
 class IsoDepProvider(private val isoDep: IsoDep) : IProvider {
     override fun transceive(command: ByteArray): ByteArray = isoDep.transceive(command)

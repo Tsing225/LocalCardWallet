@@ -20,6 +20,11 @@ object AuthManager {
     private const val PREF_NAME = "auth_prefs"
     private const val KEY_SALT = "salt"
     private const val KEY_HASH = "hash"
+    private const val KEY_FAILS = "fails"
+    private const val KEY_LOCKOUT_UNTIL = "lockout_until"
+    private const val MAX_FAILS_BEFORE_LOCKOUT = 5
+    private const val BASE_LOCKOUT_MS = 30_000L
+    private const val MAX_LOCKOUT_MS = 300_000L
     private const val ITERATIONS = 120_000
     private const val KEY_BITS = 256
     const val MIN_PASSWORD_LENGTH = 8
@@ -62,10 +67,39 @@ object AuthManager {
         return null
     }
 
+    /** 锁屏剩余锁定毫秒数；0 表示未锁定。锁定状态存进 prefs，杀进程也绕不过。 */
+    fun lockoutRemainingMs(context: Context): Long {
+        val until = prefs(context).getLong(KEY_LOCKOUT_UNTIL, 0L)
+        return (until - System.currentTimeMillis()).coerceAtLeast(0L)
+    }
+
     fun verify(context: Context, password: String): Boolean {
+        if (lockoutRemainingMs(context) > 0) return false
         val ok = checkPassword(context, password)
-        if (ok) unlocked = true
+        if (ok) {
+            clearFailures(context)
+            unlocked = true
+        } else {
+            recordFailure(context)
+        }
         return ok
+    }
+
+    private fun recordFailure(context: Context) {
+        val p = prefs(context)
+        val fails = p.getInt(KEY_FAILS, 0) + 1
+        val edit = p.edit().putInt(KEY_FAILS, fails)
+        if (fails >= MAX_FAILS_BEFORE_LOCKOUT) {
+            // 30 秒起步，每多错一次翻倍，上限 5 分钟
+            val shift = (fails - MAX_FAILS_BEFORE_LOCKOUT).coerceAtMost(4)
+            val lockMs = (BASE_LOCKOUT_MS shl shift).coerceAtMost(MAX_LOCKOUT_MS)
+            edit.putLong(KEY_LOCKOUT_UNTIL, System.currentTimeMillis() + lockMs)
+        }
+        edit.apply()
+    }
+
+    private fun clearFailures(context: Context) {
+        prefs(context).edit().remove(KEY_FAILS).remove(KEY_LOCKOUT_UNTIL).apply()
     }
 
     private fun checkPassword(context: Context, password: String): Boolean {

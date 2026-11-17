@@ -124,7 +124,7 @@
     <string name="settings_bin_lib">Local BIN library</string>
     <string name="settings_bin_lib_desc">341 banks · 9480 ranges · offline</string>
     <string name="settings_database">Database</string>
-    <string name="settings_database_desc">SQLCipher encrypted</string>
+    <string name="settings_database_desc">SQLCipher encrypted, key held by system Keystore</string>
     <string name="settings_about">About</string>
     <string name="settings_version">Version</string>
     <string name="settings_privacy">Privacy</string>
@@ -166,4 +166,15 @@
     <string name="bank_picker_title">Set issuer</string>
     <string name="bank_picker_search">Search bank name</string>
     <string name="bank_picker_count">%1$d banks</string>
+
+    <string name="lock_error_locked_out">Too many attempts. Try again in %1$d seconds.</string>
+    <string name="value_unknown">Unknown</string>
+    <string name="biometric_unlock_title">Unlock wallet</string>
+    <string name="biometric_unlock_subtitle">Use fingerprint or face</string>
+    <string name="nfc_dialog_title">New card detected</string>
+    <string name="nfc_dialog_message">Card ending in %1$s · %2$s · expires %3$s. Add it to your wallet?</string>
+    <string name="nfc_added">Added to your wallet</string>
+    <string name="nfc_exists">This card is already in your wallet</string>
+    <string name="nfc_limit">Wallet is full (max %1$d cards)</string>
+    <string name="action_add">Add</string>
 </resources>

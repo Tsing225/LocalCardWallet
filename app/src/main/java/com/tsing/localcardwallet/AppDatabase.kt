@@ -8,7 +8,6 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import net.sqlcipher.database.SQLiteDatabase
 import net.sqlcipher.database.SupportFactory
-import java.security.SecureRandom
 
 @Database(entities = [CardEntity::class], version = 4, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
@@ -53,7 +52,7 @@ abstract class AppDatabase : RoomDatabase() {
                 //    否则第一次建库会直接 UnsatisfiedLinkError 崩溃
                 SQLiteDatabase.loadLibs(appContext)
 
-                val passphrase: ByteArray = SQLiteDatabase.getBytes(getOrCreatePassphrase(appContext).toCharArray())
+                val passphrase: ByteArray = SQLiteDatabase.getBytes(DbKeyManager.getOrCreatePassphrase(appContext).toCharArray())
                 val factory = SupportFactory(passphrase)
 
                 val instance = Room.databaseBuilder(
@@ -67,19 +66,6 @@ abstract class AppDatabase : RoomDatabase() {
                 INSTANCE = instance
                 instance
             }
-        }
-
-        private fun getOrCreatePassphrase(context: Context): String {
-            val prefs = context.getSharedPreferences("db_secure_prefs", Context.MODE_PRIVATE)
-            var passphrase = prefs.getString("db_passphrase", null)
-            if (passphrase == null) {
-                val random = SecureRandom()
-                val bytes = ByteArray(32)
-                random.nextBytes(bytes)
-                passphrase = bytes.joinToString("") { "%02x".format(it) }
-                prefs.edit().putString("db_passphrase", passphrase).apply()
-            }
-            return passphrase
         }
     }
 }

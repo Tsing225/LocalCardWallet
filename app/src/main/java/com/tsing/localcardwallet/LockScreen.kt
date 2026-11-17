@@ -20,6 +20,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -35,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.sp
 import androidx.fragment.app.FragmentActivity
+import kotlinx.coroutines.delay
 
 @Composable
 fun LockScreen(onResetData: () -> Unit) {
@@ -45,6 +47,16 @@ fun LockScreen(onResetData: () -> Unit) {
     var confirm by remember { mutableStateOf("") }
     var error by remember { mutableStateOf<String?>(null) }
     var showReset by remember { mutableStateOf(false) }
+    var lockoutLeftSec by remember { mutableStateOf(0) }
+
+    // 锁定期间每秒刷新剩余秒数；未锁定时状态值不变，几乎不产生重组
+    LaunchedEffect(Unit) {
+        while (true) {
+            val left = AuthManager.lockoutRemainingMs(context)
+            lockoutLeftSec = ((left + 999) / 1000).toInt()
+            delay(if (left > 0) 500L else 1000L)
+        }
+    }
 
     val biometricReady = remember { BiometricGate.isAvailable(context) }
 
@@ -110,6 +122,15 @@ fun LockScreen(onResetData: () -> Unit) {
                 )
             }
 
+            if (lockoutLeftSec > 0) {
+                Spacer(modifier = Modifier.height(10.dp))
+                Text(
+                    text = stringResource(R.string.lock_error_locked_out, lockoutLeftSec),
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.error,
+                )
+            }
+
             if (error != null) {
                 Spacer(modifier = Modifier.height(10.dp))
                 Text(
@@ -128,7 +149,9 @@ fun LockScreen(onResetData: () -> Unit) {
                     .clip(RoundedCornerShape(26.dp))
                     .background(MaterialTheme.colorScheme.primary),
                 pressedScale = 0.95f,
+                enabled = lockoutLeftSec <= 0,
                 onClick = {
+                    if (lockoutLeftSec > 0) return@BounceClick
                     if (hasAccount) {
                         if (AuthManager.verify(context, password)) {
                             // unlocked 状态变化会自动切换到主界面
@@ -158,8 +181,8 @@ fun LockScreen(onResetData: () -> Unit) {
                 TextButton(onClick = {
                     BiometricGate.authenticate(
                         activity = activity,
-                        title = "解锁卡包",
-                        subtitle = "使用指纹或面容",
+                        title = context.getString(R.string.biometric_unlock_title),
+                        subtitle = context.getString(R.string.biometric_unlock_subtitle),
                         onSuccess = { AuthManager.unlockWithBiometric() },
                         onFail = { error = it },
                     )

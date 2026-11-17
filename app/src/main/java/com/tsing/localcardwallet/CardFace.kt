@@ -273,12 +273,25 @@ private fun DrawScope.drawFace(style: String, base: Color, accent: Color) {
     }
 }
 
+private const val COVER_MAX_DIMENSION = 1080
+
 private suspend fun loadCover(path: String?, context: android.content.Context): ImageBitmap? {
     if (path.isNullOrBlank()) return null
     return withContext(Dispatchers.IO) {
         runCatching {
             val file = File(context.filesDir, path)
-            if (!file.exists()) null else BitmapFactory.decodeFile(file.absolutePath)?.asImageBitmap()
+            if (!file.exists()) return@runCatching null
+            // 先读尺寸再采样：原图可能是上千万像素，全尺寸解码既占内存又无必要
+            val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+            BitmapFactory.decodeFile(file.absolutePath, bounds)
+            var sample = 1
+            while (bounds.outWidth / sample > COVER_MAX_DIMENSION ||
+                bounds.outHeight / sample > COVER_MAX_DIMENSION
+            ) {
+                sample *= 2
+            }
+            val opts = BitmapFactory.Options().apply { inSampleSize = sample }
+            BitmapFactory.decodeFile(file.absolutePath, opts)?.asImageBitmap()
         }.getOrNull()
     }
 }
@@ -346,7 +359,7 @@ fun WalletCard(
                 verticalAlignment = Alignment.Top,
             ) {
                 Text(
-                    text = bank?.name ?: card.type.ifBlank { "BANK CARD" },
+                    text = bank?.name ?: card.bankName ?: card.type.ifBlank { "BANK CARD" },
                     color = Color.White.copy(alpha = 0.94f),
                     fontSize = 13.sp,
                     fontWeight = FontWeight.SemiBold,
@@ -361,8 +374,11 @@ fun WalletCard(
             Text(
                 text = displayPan,
                 color = Color.White,
-                fontSize = 22.sp,
-                letterSpacing = 1.sp,
+                // 19 位卡号的分组更长：缩小字号并禁止换行，避免第二行与下一张叠卡重叠
+                fontSize = if (displayPan.length > 24) 17.sp else 21.sp,
+                letterSpacing = 0.5.sp,
+                maxLines = 1,
+                softWrap = false,
                 modifier = Modifier.align(Alignment.CenterHorizontally),
             )
             Spacer(modifier = Modifier.weight(1f))

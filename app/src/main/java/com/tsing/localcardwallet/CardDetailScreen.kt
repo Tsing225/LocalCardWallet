@@ -1,5 +1,10 @@
 package com.tsing.localcardwallet
 
+import android.content.ClipData
+import android.content.ClipDescription
+import android.content.ClipboardManager
+import android.content.Context
+import android.os.Build
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
@@ -60,6 +65,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.fragment.app.FragmentActivity
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -208,11 +215,7 @@ fun CardDetailScreen(
                         Row {
                             if (revealed) {
                                 TextButton(onClick = {
-                                    val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE)
-                                        as android.content.ClipboardManager
-                                    clipboard.setPrimaryClip(
-                                        android.content.ClipData.newPlainText("card number", card.pan)
-                                    )
+                                    copyPanToClipboard(context, scope, card.pan)
                                     Toast.makeText(
                                         context,
                                         context.getString(R.string.toast_pan_copied),
@@ -551,4 +554,35 @@ private fun maskedPan(pan: String): String {
         if (i < 4 || i >= pan.length - 4) c else '*'
     }.joinToString("")
     return masked.chunked(4).joinToString(" ")
+}
+
+/**
+ * 复制完整卡号到剪贴板：Android 13+ 标记为敏感内容（不显示在剪贴板预览里），
+ * 60 秒后若剪贴板内容仍是这张卡号则自动清除。
+ */
+private fun copyPanToClipboard(context: Context, scope: CoroutineScope, pan: String) {
+    val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+    val clip = ClipData.newPlainText("card number", pan)
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        // ClipDescription 的 extras 只能原地修改（其 setter 要求 PersistableBundle 类型）
+        runCatching {
+            clip.description.extras?.putBoolean(ClipDescription.EXTRA_IS_SENSITIVE, true)
+        }
+    }
+    clipboard.setPrimaryClip(clip)
+    scope.launch {
+        delay(60_000)
+        runCatching {
+            val current = clipboard.primaryClip
+            if (current != null && current.itemCount > 0 &&
+                current.getItemAt(0).text?.toString() == pan
+            ) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                    clipboard.clearPrimaryClip()
+                } else {
+                    clipboard.setPrimaryClip(ClipData.newPlainText("", ""))
+                }
+            }
+        }
+    }
 }

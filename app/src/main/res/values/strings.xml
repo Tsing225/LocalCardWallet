@@ -124,7 +124,7 @@
     <string name="settings_bin_lib">本地 BIN 库</string>
     <string name="settings_bin_lib_desc">341 家银行 · 9480 个号段 · 离线</string>
     <string name="settings_database">数据库</string>
-    <string name="settings_database_desc">SQLCipher 加密</string>
+    <string name="settings_database_desc">SQLCipher 加密，密钥由系统 Keystore 保护</string>
     <string name="settings_about">关于</string>
     <string name="settings_version">版本</string>
     <string name="settings_privacy">隐私</string>
@@ -166,4 +166,15 @@
     <string name="bank_picker_title">指定发卡行</string>
     <string name="bank_picker_search">搜索银行名称，如 工商</string>
     <string name="bank_picker_count">共 %1$d 家银行</string>
+
+    <string name="lock_error_locked_out">尝试次数过多，请在 %1$d 秒后重试</string>
+    <string name="value_unknown">未知</string>
+    <string name="biometric_unlock_title">解锁卡包</string>
+    <string name="biometric_unlock_subtitle">使用指纹或面容</string>
+    <string name="nfc_dialog_title">检测到新卡片</string>
+    <string name="nfc_dialog_message">尾号 %1$s · %2$s · 有效期 %3$s，是否添加到卡包？</string>
+    <string name="nfc_added">已添加到卡包</string>
+    <string name="nfc_exists">这张卡已在卡包中</string>
+    <string name="nfc_limit">卡包已满，最多 %1$d 张</string>
+    <string name="action_add">添加</string>
 </resources>

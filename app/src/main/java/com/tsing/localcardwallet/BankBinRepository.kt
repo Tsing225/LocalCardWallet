@@ -2,6 +2,7 @@ package com.tsing.localcardwallet
 
 import android.content.Context
 import android.graphics.Color as AndroidColor
+import android.os.Looper
 import androidx.compose.ui.graphics.Color
 import org.json.JSONObject
 
@@ -32,18 +33,42 @@ object BankBinRepository {
     @Volatile private var rules: List<Pair<String, String>> = emptyList()
     @Volatile private var kinds: Map<String, String> = emptyMap()
     @Volatile private var loaded = false
+    @Volatile private var loadStarted = false
 
     fun init(context: Context) {
         if (appContext == null) appContext = context.applicationContext
     }
 
-    /** 在后台线程调用一次，避免首次渲染卡面时同步解析造成掉帧 */
+    /**
+     * 触发一次加载，但绝不在主线程做文件解析。
+     * 主线程调用时只负责在后台线程拉起加载，本次返回未就绪；
+     * 调用方对 null / 空结果都有兜底，下一次读取时数据已就绪。
+     */
     fun preload() {
+        if (loaded || appContext == null) return
+        if (Looper.myLooper() == Looper.getMainLooper()) {
+            preloadAsync()
+            return
+        }
         ensureLoaded()
+    }
+
+    private fun preloadAsync() {
+        if (loadStarted) return
+        synchronized(this) {
+            if (loadStarted) return
+            loadStarted = true
+        }
+        Thread { runCatching { ensureLoaded() } }.start()
     }
 
     private fun ensureLoaded(): Boolean {
         if (loaded) return true
+        // 绝不在主线程解析 300KB 的 JSON：先在后台拉起加载，本次返回未就绪
+        if (Looper.myLooper() == Looper.getMainLooper()) {
+            preloadAsync()
+            return false
+        }
         val ctx = appContext ?: return false
         synchronized(this) {
             if (loaded) return true

@@ -23,8 +23,18 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
+      # GitHub runner 自带 Android SDK；这里只做尽力而为的补装，失败不阻塞（AGP 会自行下载）
+      - name: Ensure Android platform present
+        run: |
+          SDK_ROOT="\${ANDROID_HOME:-$ANDROID_SDK_ROOT}"
+          echo "ANDROID_SDK_ROOT=$SDK_ROOT"
+          SDKMANAGER=$(find "$SDK_ROOT" -name sdkmanager -type f 2>/dev/null | head -1)
+          if [ -n "$SDKMANAGER" ]; then
+            yes | "$SDKMANAGER" --licenses > /dev/null 2>&1 || true
+            "$SDKMANAGER" "platforms;android-37" > /dev/null 2>&1 || echo "platform install skipped"
+          else
+            echo "sdkmanager not found, letting AGP download"
+          fi
 
       - name: Make gradlew executable
         run: chmod +x ./gradlew
